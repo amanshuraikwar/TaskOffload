@@ -24,6 +24,7 @@ public class OffLoadGui{
 	static int imageChoice;
 
 	static String currentDockerNodeId;
+	static float threshold = 0;
 
 	public OffLoadGui() {
 		
@@ -203,8 +204,8 @@ public class OffLoadGui{
 		});
 
 	Thread monitorStatsThread = new Thread(new Runnable() {
-			float memStats = new float[5];
-			float cpuStats = new float[5];
+			float memStats[] = new float[5];
+			float cpuStats[] = new float[5];
 
 			@Override
 			public void run() {
@@ -219,8 +220,8 @@ public class OffLoadGui{
 						String command = "docker stats " + serviceNames[imageChoice] + " --no-stream --format '{{.CPUPerc}} {{.MemPerc}}'";
 						String stats[] = executeCommand(command, outputTextArea).split(" ");
 
-						float cpuStats[i] = Float.parseFloat(stats[0].split("%")[0]);
-						float memStats[i] = Float.parseFloat(stats[1].split("%")[0]);
+						cpuStats[i] = Float.parseFloat(stats[0].split("%")[0]);
+						memStats[i] = Float.parseFloat(stats[1].split("%")[0]);
 
 						if(i == 4) {
 							float avg = 0;
@@ -229,7 +230,7 @@ public class OffLoadGui{
 							}
 							avg = avg/cpuStats.length;
 
-							if(avg > 80) {
+							if(avg > threshold) {
 								break;
 							}
 
@@ -239,7 +240,7 @@ public class OffLoadGui{
 							}
 							avg = avg/memStats.length;
 
-							if(avg > 80) {
+							if(avg > threshold) {
 								break;
 							}
 							
@@ -254,9 +255,16 @@ public class OffLoadGui{
 					}
 				}
 
-				if(!runLocalThread.isAlive()) {
-					String command = "docker stop " + serviceNames[imageChoice];
-					executeCommand(command);
+				if(runLocalThread.isAlive()) {
+					
+					String command="docker commit " + serviceNames[imageChoice] + " " + currentDockerNodeId;
+					executeCommand(command, null);
+
+					command = "docker stop " + serviceNames[imageChoice];
+					executeCommand(command, null);
+
+					command = "docker rm " + serviceNames[imageChoice];
+					executeCommand(command, null);
 				}
 
 			}
