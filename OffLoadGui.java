@@ -37,6 +37,7 @@ public class OffLoadGui{
 	static String currentServiceName = null;
 	static String currentImageName = null;
 	static String currentArgs = null;
+	static int workerNodeIndex = 0;
 
 	static Thread runOnServerThread, runLocalThread, monitorStatsThread;
 	static Runnable runOnServerRunnable, runLocalRunnable, monitorStatsRunnable;
@@ -57,7 +58,7 @@ public class OffLoadGui{
 		        executeCommand(command, null);
 
 		        command = "docker service create --replicas 1 --constraint node.id==" 
-		        + workerNodeIds[0] + " --restart-condition \"none\" --name "+ currentServiceName 
+		        + workerNodeIds[workerNodeIndex] + " --restart-condition \"none\" --name "+ currentServiceName 
 		        + " --mount type=bind,source=" + tempDataPath + ",destination=/data " 
 		        + currentImageName + " " + currentArgs;
 
@@ -83,6 +84,12 @@ public class OffLoadGui{
 		        + currentArgs;
 
 				executeCommand(command, outputTextArea);
+
+				// if(monitorStatsThread != null) {
+				// 	if(monitorStatsThread.isAlive()) {
+				// 		monitorStatsThread.stop();	
+				// 	}
+				// }
 		    }
 		};
 
@@ -395,6 +402,12 @@ public class OffLoadGui{
 		currentImageName = imageNames[imageChoice];
 		currentArgs = argsTextfield.getText().toString();
 
+		if(workerNodeIndex > (workerNodeIds.length - 2)) {
+			workerNodeIndex = 0;
+		} else {
+			workerNodeIndex++;
+		}
+
 		runOnServerThread = new Thread(runOnServerRunnable);
 		runOnServerThread.start();
 	}
@@ -410,6 +423,12 @@ public class OffLoadGui{
 		currentServiceName = serviceNames[imageChoice] + "-" + System.currentTimeMillis();
 		currentImageName = imageNames[imageChoice];
 		currentArgs = argsTextfield.getText().toString();
+
+		if(workerNodeIndex > (workerNodeIds.length - 2)) {
+			workerNodeIndex = 0;
+		} else {
+			workerNodeIndex++;
+		}
 
 		runLocalThread = new Thread(runLocalRunnable);
 		runLocalThread.start();
